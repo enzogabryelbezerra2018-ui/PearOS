@@ -1412,3 +1412,189 @@ public class RenderCore {
 
 renderCore.drawButton(g, d, "Iniciar");
 */
+/* ============================================================
+ * 10. Layout System (Linear, Absolute, Frame, Constraint)
+ * ============================================================
+*/
+
+public class LayoutSystem {
+
+    public static abstract class Layout {
+        public abstract void arrange(List<UIElement> children, int parentW, int parentH);
+    }
+
+    /* ---------------- Linear Layout ---------------- */
+    public static class LinearLayout extends Layout {
+        public boolean vertical = true;
+        public int padding = 10;
+        public int spacing = 8;
+
+        @Override
+        public void arrange(List<UIElement> children, int pw, int ph) {
+            int cursor = padding;
+            for (UIElement c : children) {
+                if (vertical) {
+                    c.x = padding;
+                    c.y = cursor;
+                    cursor += c.h + spacing;
+                } else {
+                    c.x = cursor;
+                    c.y = padding;
+                    cursor += c.w + spacing;
+                }
+            }
+        }
+    }
+
+    /* ---------------- Frame Layout ---------------- */
+    public static class FrameLayout extends Layout {
+        @Override
+        public void arrange(List<UIElement> children, int pw, int ph) {
+            for (UIElement c : children) {
+                // Eles simplesmente ficam onde foram posicionados
+            }
+        }
+    }
+
+    /* ---------------- Absolute ---------------- */
+    public static class AbsoluteLayout extends Layout {
+        @Override
+        public void arrange(List<UIElement> list, int pw, int ph) {}
+    }
+
+    /* ---------------- Constraint (simples) ---------------- */
+    public static class ConstraintLayout extends Layout {
+        @Override
+        public void arrange(List<UIElement> children, int pw, int ph) {
+            for (UIElement c : children) {
+                if (c.centerHorizontal) c.x = pw / 2 - c.w / 2;
+                if (c.centerVertical) c.y = ph / 2 - c.h / 2;
+            }
+        }
+    }
+}
+/* ============================================================
+ * 11. Input Engine (Touch, Mouse, Gesture, Scroll, Drag)
+ * ============================================================
+*/
+public class InputEngine {
+
+    UIElement currentFocus = null;
+
+    public void onTouchDown(int x, int y, List<UIElement> ui) {
+        for (UIElement e : ui) {
+            if (e.contains(x, y)) {
+                currentFocus = e;
+                if (e.onClick != null) e.onClick.run();
+                break;
+            }
+        }
+    }
+
+    public void onTouchMove(int x, int y) {
+        if (currentFocus != null && currentFocus.draggable) {
+            currentFocus.x = x - currentFocus.w / 2;
+            currentFocus.y = y - currentFocus.h / 2;
+        }
+    }
+
+    public void onScroll(int dy, List<UIElement> ui) {
+        for (UIElement e : ui) e.y -= dy; // scroll global
+    }
+
+    public void onGestureZoom(float factor, List<UIElement> ui) {
+        for (UIElement e : ui) {
+            e.w *= factor;
+            e.h *= factor;
+        }
+    }
+}
+/* ============================================================
+ * 12. Physics UI Engine (Gravity, Bounce, Mass, Friction)
+ * ============================================================
+*/
+
+public class PhysicsUI {
+
+    float gravity = 0.5f;
+    float friction = 0.9f;
+
+    public void apply(List<UIElement> ui, int screenH) {
+        for (UIElement e : ui) {
+
+            // gravidade
+            e.vy += gravity;
+
+            // movimento
+            e.y += e.vy;
+
+            // colisão
+            if (e.y + e.h > screenH) {
+                e.y = screenH - e.h;
+                e.vy *= -0.6f; // bounce
+            }
+
+            // atrito
+            e.vy *= friction;
+        }
+    }
+}
+/* ============================================================
+ * 13. ShaderEngine (Blur, Glow, Shadow, Neon, DepthLight)
+ * ============================================================
+*/
+
+public class ShaderEngine {
+
+    public void applyShadow(Graphics2D g, UIElement e) {
+        g.setColor(new Color(0,0,0,100));
+        g.fillRoundRect(e.x+6, e.y+6, e.w, e.h, 20, 20);
+    }
+
+    public void applyGlow(Graphics2D g, UIElement e, Color c) {
+        g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 60));
+        g.fillOval(e.x-10, e.y-10, e.w+20, e.h+20);
+    }
+
+    public void applyNeon(Graphics2D g, UIElement e, Color c) {
+        g.setColor(c);
+        g.drawRoundRect(e.x, e.y, e.w, e.h, 20, 20);
+    }
+
+    public void applyFocusBlur(Graphics2D g, UIElement e) {
+        // blur falso simples
+        g.setColor(new Color(50, 50, 50, 40));
+        g.fillRect(e.x-4, e.y-4, e.w+8, e.h+8);
+    }
+}
+/* ============================================================
+ * 14. Widgets (Button, Label, Card, Switch, Image)
+ * ============================================================
+*/
+
+public class UIElement {
+
+    public int x, y, w, h;
+    public float vy = 0;
+
+    public boolean centerHorizontal = false;
+    public boolean centerVertical = false;
+
+    public boolean draggable = false;
+
+    public Runnable onClick;
+
+    public BufferedImage image;
+    public String text = "";
+    public Color color = Color.WHITE;
+
+    public boolean contains(int px, int py) {
+        return px >= x && px <= x+w && py >= y && py <= y+h;
+    }
+}
+
+public class UIButton extends UIElement {}
+public class UILabel extends UIElement {}
+public class UIImage extends UIElement {}
+public class UICard extends UIElement {}
+public class UISwitch extends UIElement { public boolean checked; }
