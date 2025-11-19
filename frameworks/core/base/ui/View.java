@@ -638,3 +638,138 @@ para fazer um objeto 11D faz
     x11="1024"
 />
     no XML */
+    // ============================================================
+    // 11. SISTEMA DE ANIMAÇÕES ND (2D → 11D) + propriedades comuns
+    // ============================================================
+
+    public static class Animation {
+        public String property;     // exemplo: x1, x2, width, height, alpha...
+        public double from;
+        public double to;
+        public long duration;
+        public long startTime;
+        public String easing;
+
+        public boolean finished = false;
+
+        public Animation(String property, double from, double to, long duration, String easing) {
+            this.property = property;
+            this.from = from;
+            this.to = to;
+            this.duration = duration;
+            this.startTime = System.currentTimeMillis();
+            this.easing = easing;
+        }
+
+        public double get(double progress) {
+            switch (easing) {
+                case "easeIn":
+                    return from + (to - from) * (progress * progress);
+
+                case "easeOut":
+                    return from + (to - from) * (1 - Math.pow(1 - progress, 2));
+
+                case "easeInOut":
+                    return from + (to - from) *
+                        (progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2);
+
+                default: // linear
+                    return from + (to - from) * progress;
+            }
+        }
+    }
+
+
+    // Lista de animações ativas por View
+    public List<Animation> animations = new ArrayList<>();
+
+
+    // ============================================================
+    // 12. Função pública pra animar qualquer coisa
+    // ============================================================
+
+    public void animate(String property, double from, double to, long duration, String easing) {
+        Animation a = new Animation(property, from, to, duration, easing);
+        animations.add(a);
+    }
+
+    public void animate(String property, double from, double to, long duration) {
+        animate(property, from, to, duration, "linear");
+    }
+
+
+    // ============================================================
+    // 13. Atualizador de animações (roda automaticamente ao renderizar)
+    // ============================================================
+
+    public void updateAnimations() {
+        long now = System.currentTimeMillis();
+
+        Iterator<Animation> it = animations.iterator();
+        while (it.hasNext()) {
+            Animation anim = it.next();
+
+            long elapsed = now - anim.startTime;
+            if (elapsed > anim.duration) {
+                setAnimatedProperty(anim.property, anim.to);
+                anim.finished = true;
+                it.remove();
+                continue;
+            }
+
+            double progress = (double) elapsed / anim.duration;
+            double value = anim.get(progress);
+
+            setAnimatedProperty(anim.property, value);
+        }
+    }
+
+
+    // ============================================================
+    // 14. Aplicar propriedades animadas (inclui ND)
+    // ============================================================
+
+    private void setAnimatedProperty(String prop, double value) {
+        if (prop.startsWith("x")) {
+            int dim = Integer.parseInt(prop.substring(1)) - 1;
+            setPositionND(dim, value);
+            return;
+        }
+
+        switch (prop) {
+            case "width":
+                this.width = (int) value;
+                break;
+
+            case "height":
+                this.height = (int) value;
+                break;
+
+            case "alpha":
+                this.alpha = value;
+                break;
+
+            case "rotation":
+                this.rotation = value;
+                break;
+
+            case "scaleX":
+                this.scaleX = value;
+                break;
+
+            case "scaleY":
+                this.scaleY = value;
+                break;
+        }
+    }
+
+
+    // ============================================================
+    // 15. Hook no render() base para rodar animações sempre
+    // ============================================================
+
+    @Override
+    public void render() {
+        updateAnimations(); // <-- animações rodando ao vivo!
+        System.out.println("[View] render base posND=" + positionND);
+    }
