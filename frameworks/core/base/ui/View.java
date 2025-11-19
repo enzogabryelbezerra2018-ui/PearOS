@@ -60,3 +60,255 @@ import static com.pearos.framework.core.base.view.ViewDebug.DEBUG_LAYOUT;
 
 import static com.pearos.framework.core.base.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static com.pearos.framework.core.base.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+package com.pearos.framework.core.base.ui;
+
+// === IMPORTS ===
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+// === CLASSE MASTER DO ARQUIVO ===
+public class View {
+
+    // -------------------------------
+    // CAMPOS BÁSICOS DO VIEW
+    // -------------------------------
+    protected int x = 0;
+    protected int y = 0;
+    protected int width = 0;
+    protected int height = 0;
+    protected View parent = null;
+
+    protected String tagName = "View";
+
+    public View() {}
+
+    public String getTagName() {
+        return tagName;
+    }
+
+    public View getParent() {
+        return parent;
+    }
+
+    // Método chamado pelo renderizador
+    public void onDraw(Canvas canvas) {}
+
+    // Método chamado quando toca
+    public boolean onTouch(int action, int tx, int ty) { return false; }
+
+    // ---------------------------------------------------------
+    // CLASSE ViewGroup EMBUTIDA DENTRO DE View.java
+    // ---------------------------------------------------------
+    public static class ViewGroup extends View {
+
+        private ArrayList<View> children = new ArrayList<>();
+
+        public ViewGroup() {
+            this.tagName = "Layout";
+        }
+
+        public void addView(View v) {
+            v.parent = this;
+            children.add(v);
+        }
+
+        public ArrayList<View> getChildren() {
+            return children;
+        }
+
+        @Override
+        public void onDraw(Canvas canvas) {
+            for (View v : children) {
+                v.onDraw(canvas);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // CLASSE TextView DENTRO DE View.java
+    // ---------------------------------------------------------
+    public static class TextView extends View {
+
+        private String text = "";
+        private int size = 16;
+        private int color = Color.WHITE;
+
+        public TextView() {
+            this.tagName = "Text";
+        }
+
+        public void setText(String t) { text = t; }
+        public void setSize(int s) { size = s; }
+        public void setColor(int c) { color = c; }
+
+        @Override
+        public void onDraw(Canvas canvas) {
+            canvas.drawText(text, x, y, size, color);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // CLASSE Button DENTRO DE View.java
+    // ---------------------------------------------------------
+    public static class Button extends View {
+
+        private String text = "";
+        private int bg = Color.GRAY;
+
+        public Button() {
+            this.tagName = "Button";
+        }
+
+        public void setText(String t) { text = t; }
+        public void setBackground(int c) { bg = c; }
+
+        @Override
+        public void onDraw(Canvas canvas) {
+            canvas.drawRect(x, y, width, height, bg);
+            canvas.drawText(text, x + 10, y + 10, 16, Color.WHITE);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // CLASSE Color EMBUTIDA
+    // ---------------------------------------------------------
+    public static class Color {
+        public static final int WHITE = 0xFFFFFFFF;
+        public static final int BLACK = 0xFF000000;
+        public static final int GRAY  = 0xFF444444;
+
+        public static int parse(String s) {
+            try {
+                return (int)Long.parseLong(s.replace("#", ""), 16);
+            } catch (Exception e) {
+                return WHITE;
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // CLASSE Canvas EMBUTIDA
+    // ---------------------------------------------------------
+    public static class Canvas {
+        public void drawText(String txt, int x, int y, int size, int color) {}
+        public void drawRect(int x, int y, int w, int h, int color) {}
+    }
+
+    // ---------------------------------------------------------
+    // CLASSE AttributeSet EMBUTIDA
+    // ---------------------------------------------------------
+    public static class AttributeSet {
+        private Map<String,String> map;
+
+        public AttributeSet(Map<String,String> m) {
+            this.map = m;
+        }
+
+        public String get(String k) {
+            return map.get(k);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // PARTE DO XML — TUDO DENTRO DESSE ARQUIVO
+    // ---------------------------------------------------------
+    public static class XmlLayoutParser {
+
+        public View inflate(InputStream xmlStream) {
+
+            try {
+                XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                factory.setNamespaceAware(true);
+
+                XmlPullParser parser = factory.newPullParser();
+                parser.setInput(xmlStream, "UTF-8");
+
+                View root = null;
+                ViewGroup currentGroup = null;
+
+                int event = parser.getEventType();
+
+                while (event != XmlPullParser.END_DOCUMENT) {
+
+                    if (event == XmlPullParser.START_TAG) {
+
+                        String tag = parser.getName();
+
+                        Map<String,String> attrs = new HashMap<>();
+                        for (int i = 0; i < parser.getAttributeCount(); i++) {
+                            attrs.put(parser.getAttributeName(i), parser.getAttributeValue(i));
+                        }
+
+                        AttributeSet set = new AttributeSet(attrs);
+
+                        View v = create(tag, set);
+
+                        if (root == null) {
+                            root = v;
+                        }
+
+                        if (currentGroup != null) {
+                            currentGroup.addView(v);
+                        }
+
+                        if (v instanceof ViewGroup) {
+                            currentGroup = (ViewGroup) v;
+                        }
+                    }
+
+                    else if (event == XmlPullParser.END_TAG) {
+                        if (currentGroup != null && currentGroup.getTagName().equals(parser.getName())) {
+                            currentGroup = (ViewGroup) currentGroup.getParent();
+                        }
+                    }
+
+                    event = parser.next();
+                }
+
+                return root;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        private View create(String tag, AttributeSet attrs) {
+
+            switch (tag) {
+
+                case "Text":
+                    TextView tv = new TextView();
+                    tv.setText(attrs.get("text"));
+                    tv.setColor(Color.parse(attrs.get("color")));
+                    tv.setSize(parseSize(attrs.get("size")));
+                    return tv;
+
+                case "Button":
+                    Button bt = new Button();
+                    bt.setText(attrs.get("text"));
+                    bt.setBackground(Color.parse(attrs.get("background")));
+                    return bt;
+
+                case "Layout":
+                    return new ViewGroup();
+
+                default:
+                    return new View();
+            }
+        }
+
+        private int parseSize(String s) {
+            try {
+                return Integer.parseInt(s.replace("dp", ""));
+            } catch (Exception e) {
+                return 16;
+            }
+        }
+    }
+}
