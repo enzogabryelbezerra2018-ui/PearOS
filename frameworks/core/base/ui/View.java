@@ -960,3 +960,122 @@ para fazer um objeto 11D faz
 
         return null;
     }
+    // ============================================================
+    // 18. DOCK DO SISTEMA + SCROLL HORIZONTAL
+    // ============================================================
+
+    public static class DockView extends View {
+
+        public List<View> dockItems = new ArrayList<>();
+        public double scrollOffset = 0;         // posição atual do scroll
+        public double scrollVelocity = 0;       // velocidade (para inércia)
+        public boolean scrolling = false;       // se está tocando
+        public double lastTouchX = 0;
+
+        public int dockHeight = 120;
+        public int itemSpacing = 20;
+
+        public DockView() {
+            super("Dock");
+        }
+
+        public void addDockItem(View v) {
+            dockItems.add(v);
+        }
+
+        @Override
+        public void onTouch(double x, double y, String action) {
+
+            if (action.equals("down")) {
+                scrolling = true;
+                lastTouchX = x;
+                scrollVelocity = 0;
+            }
+
+            if (action.equals("move") && scrolling) {
+                double dx = x - lastTouchX;
+                scrollOffset += dx;
+                lastTouchX = x;
+            }
+
+            if (action.equals("up")) {
+                scrolling = false;
+            }
+        }
+
+        @Override
+        public void update() {
+            super.update();
+
+            // Inércia do scroll
+            if (!scrolling) {
+                scrollOffset += scrollVelocity;
+                scrollVelocity *= 0.9; // atrito leve
+
+                if (Math.abs(scrollVelocity) < 0.01)
+                    scrollVelocity = 0;
+            }
+        }
+
+        @Override
+        public void render() {
+            updateAnimations();
+            update();
+
+            System.out.println("=== [Dock] === scroll=" + scrollOffset);
+
+            int index = 0;
+            for (View item : dockItems) {
+                double posX = width / 2 + (index * (item.width + itemSpacing)) + scrollOffset;
+                double posY = height - dockHeight;
+
+                item.setPositionND(0, posX);
+                item.setPositionND(1, posY);
+
+                item.render();
+                index++;
+            }
+        }
+    }
+
+
+    // ============================================================
+    // 19. DOCK ITEM (ícone simples)
+    // ============================================================
+
+    public static class DockItemView extends View {
+        public String label = "";
+        public String icon = "";
+
+        public DockItemView() {
+            super("DockItem");
+        }
+
+        @Override
+        public void render() {
+            System.out.println("[DockItem] '" + label +
+                "' posND=" + Arrays.toString(positionND.coords));
+        }
+    }
+
+
+    // ============================================================
+    // 20. XML PARSER para dock
+    // ============================================================
+
+    public static View createDockViewFromXML(String tag, Map<String,String> attrs) {
+
+        switch (tag) {
+            case "Dock":
+                DockView d = new DockView();
+                return d;
+
+            case "DockItem":
+                DockItemView i = new DockItemView();
+                i.label = attrs.getOrDefault("label", "App");
+                i.icon = attrs.getOrDefault("icon", "");
+                return i;
+        }
+
+        return null;
+    }
