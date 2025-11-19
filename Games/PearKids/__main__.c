@@ -1,0 +1,10 @@
+PACKAGE("com.games.pear.kids");
+PRINT("IMAGES");
+RECORD("AUDIO");
+BATERY_UI("BATERY.png");
+SPEAKER_REPEAT("RECORD");
+#define GAME_API1
+#define GAME_API2
+#define GAME_API3
+#define GAME_API4
+READ_IO("IDADE DA PESSOA");
