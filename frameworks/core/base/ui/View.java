@@ -1189,3 +1189,95 @@ public class AppIconRenderer {
     }
 
 }
+/* ============================================================
+ * 8. Splash Screen Engine
+ * ============================================================
+*/
+
+public class SplashScreen {
+
+    private static final int SPLASH_DURATION_MS = 1200;  // tempo padrão
+    private static final float LOGO_SIZE_DP = 96;
+    private static final float TEXT_SIZE_SP = 18;
+
+    private boolean active = false;
+    private long startTime;
+    private BufferedImage logo;
+    private String appName;
+
+    public void load(String packageName, String appName, float density) {
+        try {
+            // Carrega logo de splash (se existir)
+            String splashPath = "/system/apps/" + packageName + "/splash.png";
+
+            if (new File(splashPath).exists()) {
+                this.logo = ImageIO.read(new File(splashPath));
+            } else {
+                // se não existir splash.png, usa o ícone normal
+                this.logo = AppIconRenderer.loadAppIcon(packageName);
+            }
+
+        } catch (Exception e) {
+            System.out.println("[SPLASH] Erro ao carregar splash: " + e);
+        }
+
+        this.appName = appName;
+        this.startTime = System.currentTimeMillis();
+        this.active = true;
+    }
+
+    public boolean isShowing() {
+        long elapsed = System.currentTimeMillis() - startTime;
+        return elapsed < SPLASH_DURATION_MS;
+    }
+
+    public void render(Graphics2D g, float density, int width, int height) {
+        if (!active) return;
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        float progress = Math.min(1f, (float) elapsed / SPLASH_DURATION_MS);
+
+        // Fundo sólido (pode trocar no futuro por animação)
+        g.setColor(new Color(20, 20, 20));
+        g.fillRect(0, 0, width, height);
+
+        // -------------------------------------------
+        // Desenha logo animada (fade + zoom leve)
+        // -------------------------------------------
+        if (logo != null) {
+            int logoSizePx = (int)(LOGO_SIZE_DP * density);
+            float scale = 0.9f + (0.1f * progress); // zoom suave
+            int renderSize = (int)(logoSizePx * scale);
+
+            int x = (width / 2) - (renderSize / 2);
+            int y = (height / 2) - (renderSize / 2) - 40;
+
+            // Opacidade suave
+            float alpha = Math.min(1f, progress + 0.3f);
+            Composite old = g.getComposite();
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+
+            g.drawImage(logo, x, y, renderSize, renderSize, null);
+
+            g.setComposite(old);
+        }
+
+        // -------------------------------------------
+        // Texto com opacidade e subida leve
+        // -------------------------------------------
+        int textSizePx = (int)(TEXT_SIZE_SP * density);
+        g.setFont(new Font("Roboto", Font.PLAIN, textSizePx));
+        g.setColor(new Color(255, 255, 255, (int)(255 * progress)));
+
+        int textWidth = g.getFontMetrics().stringWidth(appName);
+        int textX = (width / 2) - (textWidth / 2);
+        int textY = (height / 2) + (int)(100 * (1f - progress)); // sobe enquanto aparece
+
+        g.drawString(appName, textX, textY);
+    }
+
+    public void finish() {
+        this.active = false;
+    }
+
+}
