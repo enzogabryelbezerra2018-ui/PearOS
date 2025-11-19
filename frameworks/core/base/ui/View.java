@@ -622,3 +622,19 @@ public class View {
             }
         }
     }
+/**
+para fazer um objeto 11D faz
+    <Object11D
+    x1="0"
+    x2="2"
+    x3="4"
+    x4="8"
+    x5="16"
+    x6="32"
+    x7="64"
+    x8="128"
+    x9="256"
+    x10="512"
+    x11="1024"
+/>
+    no XML */
