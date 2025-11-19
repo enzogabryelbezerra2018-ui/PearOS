@@ -1079,3 +1079,113 @@ para fazer um objeto 11D faz
 
         return null;
     }
+/* ============================================================
+ * 7. App Icon & App Name Renderer
+ * ============================================================
+*/
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+
+public class AppIconRenderer {
+
+    // Cache global de ícones
+    private static final Map<String, BufferedImage> ICON_CACHE = new HashMap<>();
+
+    // Configurações visuais gerais
+    private static final int DEFAULT_ICON_SIZE_DP = 48;
+    private static final int DEFAULT_TEXT_SIZE_SP = 14;
+
+    // Carrega o ícone do app a partir do manifesto
+    public static BufferedImage loadAppIcon(String packageName) {
+        try {
+            // Se já está no cache, devolve
+            if (ICON_CACHE.containsKey(packageName)) {
+                return ICON_CACHE.get(packageName);
+            }
+
+            // Arquivo do ícone
+            String path = "/system/apps/" + packageName + "/icon.png";
+
+            BufferedImage img = ImageIO.read(new File(path));
+            ICON_CACHE.put(packageName, img);
+            return img;
+
+        } catch (Exception e) {
+            System.err.println("[UI][ICON] Erro ao carregar ícone de " + packageName);
+            return null;
+        }
+    }
+
+    // Escala pra densidade da tela (dp → px)
+    public static BufferedImage scaleIcon(BufferedImage img, float density) {
+        if (img == null) return null;
+
+        int sizePx = (int) (DEFAULT_ICON_SIZE_DP * density);
+
+        BufferedImage scaled = new BufferedImage(sizePx, sizePx, BufferedImage.TYPE_INT_ARGB);
+
+        scaled.getGraphics().drawImage(img, 0, 0, sizePx, sizePx, null);
+        return scaled;
+    }
+
+    // Renderiza ícone + nome do app
+    public static void renderAppEntry(
+            Graphics2D g,
+            String packageName,
+            String appName,
+            float density,
+            int x,
+            int y
+    ) {
+        BufferedImage icon = loadAppIcon(packageName);
+
+        // Se não carregou o ícone, desenha um quadrado cinza
+        if (icon == null) {
+            g.setColor(new Color(150, 150, 150));
+            g.fillRect(x, y, 100, 100);
+        } else {
+            BufferedImage scaled = scaleIcon(icon, density);
+            g.drawImage(scaled, x, y, null);
+        }
+
+        // Ajusta tipografia
+        int textSizePx = (int) (DEFAULT_TEXT_SIZE_SP * density);
+        g.setFont(new Font("Roboto", Font.PLAIN, textSizePx));
+        g.setColor(Color.WHITE);
+
+        // Desenha o nome abaixo do ícone
+        g.drawString(appName, x, y + (int)(DEFAULT_ICON_SIZE_DP * density) + textSizePx);
+    }
+
+    // Renderiza só o ícone (para dock, atalhos, etc)
+    public static void renderOnlyIcon(
+            Graphics2D g,
+            String packageName,
+            float density,
+            int x,
+            int y
+    ) {
+        BufferedImage icon = loadAppIcon(packageName);
+        if (icon == null) return;
+
+        BufferedImage scaled = scaleIcon(icon, density);
+        g.drawImage(scaled, x, y, null);
+    }
+
+    // Renderiza só o texto (caso a UI queira)
+    public static void renderOnlyText(
+            Graphics2D g,
+            String appName,
+            float density,
+            int x,
+            int y
+    ) {
+        int textSizePx = (int) (DEFAULT_TEXT_SIZE_SP * density);
+        g.setFont(new Font("Roboto", Font.PLAIN, textSizePx));
+        g.setColor(Color.WHITE);
+        g.drawString(appName, x, y);
+    }
+
+}
