@@ -1598,3 +1598,205 @@ public class UILabel extends UIElement {}
 public class UIImage extends UIElement {}
 public class UICard extends UIElement {}
 public class UISwitch extends UIElement { public boolean checked; }
+/* ============================================================
+ * 15. Window Manager
+ * ============================================================
+*/
+
+public class UIWindow {
+
+    public String title;
+    public int x, y, w, h;
+    public int zIndex = 0;
+
+    public boolean dragging = false;
+    public boolean resizing = false;
+
+    public List<UIElement> children = new ArrayList<>();
+
+    public UIWindow(String title, int x, int y, int w, int h) {
+        this.title = title;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+
+    public boolean contains(int px, int py) {
+        return px >= x && px <= x+w && py >= y && py <= y+h;
+    }
+
+    public boolean onTitleBar(int px, int py) {
+        return contains(px, py) && py <= y + 40;
+    }
+
+    public boolean onResizeArea(int px, int py) {
+        return px >= x + w - 16 && py >= y + h - 16;
+    }
+}
+
+public class WindowManager {
+
+    List<UIWindow> windows = new ArrayList<>();
+    UIWindow active = null;
+
+    public void addWindow(UIWindow w) {
+        w.zIndex = windows.size();
+        windows.add(w);
+        active = w;
+    }
+
+    public void renderAll(Graphics2D g) {
+        // ordena por Z-index
+        windows.sort(Comparator.comparingInt(w -> w.zIndex));
+
+        for (UIWindow w : windows) {
+            renderWindow(g, w);
+        }
+    }
+
+    private void renderWindow(Graphics2D g, UIWindow w) {
+        // sombra
+        g.setColor(new Color(0,0,0,120));
+        g.fillRoundRect(w.x+6, w.y+6, w.w, w.h, 20, 20);
+
+        // corpo
+        g.setColor(new Color(240,240,240));
+        g.fillRoundRect(w.x, w.y, w.w, w.h, 20, 20);
+
+        // barra de título
+        g.setColor(new Color(60, 120, 250));
+        g.fillRoundRect(w.x, w.y, w.w, 40, 20, 20);
+
+        // título
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Roboto", Font.BOLD, 18));
+        g.drawString(w.title, w.x + 15, w.y + 25);
+    }
+
+    // eventos de toque
+    public void onDown(int x, int y) {
+        for (int i = windows.size()-1; i>=0; i--) {
+            UIWindow w = windows.get(i);
+            if (w.onTitleBar(x, y)) {
+                active = w;
+                w.dragging = true;
+                return;
+            }
+            if (w.onResizeArea(x, y)) {
+                active = w;
+                w.resizing = true;
+                return;
+            }
+        }
+    }
+
+    public void onMove(int x, int y) {
+        if (active == null) return;
+
+        if (active.dragging) {
+            active.x = x - active.w/2;
+            active.y = y - 20;
+        }
+
+        if (active.resizing) {
+            active.w = Math.max(200, x - active.x);
+            active.h = Math.max(200, y - active.y);
+        }
+    }
+
+    public void onUp() {
+        if (active != null) {
+            active.dragging = false;
+            active.resizing = false;
+        }
+    }
+}
+/* ============================================================
+ * 16. Dock com Blur Dinâmico
+ * ============================================================
+*/
+
+public class Dock {
+
+    public List<AppInfo> apps = new ArrayList<>();
+    public int height = 92;
+
+    public static class AppInfo {
+        public BufferedImage icon;
+        public String name;
+        public String packageName;
+    }
+
+    public void render(Graphics2D g, int screenW, int screenH) {
+
+        // barra com blur fake
+        g.setColor(new Color(255,255,255,80));
+        g.fillRoundRect(
+            (int)(screenW * 0.1),
+            screenH - height - 20,
+            (int)(screenW * 0.8),
+            height,
+            30, 30
+        );
+
+        int section = (int)(screenW * 0.8);
+        int startX = (int)(screenW * 0.1) + 20;
+        int iconSize = 64;
+        int gap = (section - apps.size()*iconSize) / (apps.size()+1);
+
+        int x = startX + gap;
+
+        for (AppInfo app : apps) {
+
+            // ícone tipo macOS
+            g.drawImage(app.icon, x, screenH - height + 10, iconSize, iconSize, null);
+
+            // glow ao redor
+            g.setColor(new Color(255,255,255,50));
+            g.fillOval(x-8, screenH - height+2, iconSize+16, iconSize+16);
+
+            x += iconSize + gap;
+        }
+    }
+}
+/* ============================================================
+ * 17. Launcher / HomeScreen
+ * ============================================================
+*/
+
+public class Launcher {
+
+    public List<Dock.AppInfo> allApps = new ArrayList<>();
+    public int columns = 4;
+    public int rows = 5;
+
+    public void render(Graphics2D g, int screenW, int screenH) {
+
+        g.setColor(new Color(240,240,240));
+        g.fillRect(0, 0, screenW, screenH);
+
+        int cellW = screenW / columns;
+        int cellH = screenH / (rows+1);
+
+        int i = 0;
+        for (Dock.AppInfo app : allApps) {
+            int col = i % columns;
+            int row = i / columns;
+
+            int x = col * cellW + cellW/2 - 32;
+            int y = row * cellH + cellH/2 - 32;
+
+            g.drawImage(app.icon, x, y, 64, 64, null);
+
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Roboto", Font.PLAIN, 14));
+
+            // centraliza nome
+            int textW = g.getFontMetrics().stringWidth(app.name);
+            g.drawString(app.name, x + 32 - textW/2, y + 80);
+
+            i++;
+        }
+    }
+}
