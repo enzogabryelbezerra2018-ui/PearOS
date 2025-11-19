@@ -1281,3 +1281,134 @@ public class SplashScreen {
     }
 
 }
+/* ============================================================
+ * 9. RenderCore – Motor Universal de Desenho (2D → 11D)
+ * ============================================================
+ *
+ * Este motor é a base de TUDO: botões, caixas, ícones, textos,
+ * animações, efeitos, sombras, ponteiros, 3D, 4D... 11D.
+ * Tudo controla através de x, y, z, w, h, d0..d10.
+*/
+
+public class RenderCore {
+
+    public static class Dimensions11D {
+        public float x, y, z;                      // 3D
+        public float w, h;                         // width / height
+        public float d4, d5, d6, d7, d8, d9, d10;  // 11D total
+
+        public Dimensions11D(float x, float y, float z,
+                             float w, float h,
+                             float d4, float d5, float d6,
+                             float d7, float d8, float d9, float d10) {
+
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.w = w;
+            this.h = h;
+
+            this.d4  = d4;
+            this.d5  = d5;
+            this.d6  = d6;
+            this.d7  = d7;
+            this.d8  = d8;
+            this.d9  = d9;
+            this.d10 = d10;
+        }
+    }
+
+    /* --------------------------------------------------------
+     * Desenhar retângulos (base de tudo)
+     * --------------------------------------------------------
+    */
+    public void drawRect(Graphics2D g, Dimensions11D dim, Color color) {
+
+        float depthFade = 1f - (dim.z / 2048f);  // fade baseado no eixo Z
+
+        g.setColor(new Color(
+            color.getRed(),
+            color.getGreen(),
+            color.getBlue(),
+            (int)(color.getAlpha() * depthFade)
+        ));
+
+        g.fillRect((int)dim.x, (int)dim.y, (int)dim.w, (int)dim.h);
+    }
+
+
+    /* --------------------------------------------------------
+     * Desenhar texto 11D (texto com profundidade)
+     * --------------------------------------------------------
+    */
+    public void drawText(Graphics2D g, String text, Dimensions11D dim, Color color, float sizePx) {
+
+        float sizeMod = sizePx * (1f + (dim.z / 1000f));  // zoom 3D no texto
+        g.setFont(new Font("Roboto", Font.PLAIN, (int)sizeMod));
+        g.setColor(color);
+
+        g.drawString(text, dim.x, dim.y);
+    }
+
+
+    /* --------------------------------------------------------
+     * Desenhar imagem (ícone, PNG, JPG)
+     * --------------------------------------------------------
+    */
+    public void drawImage(Graphics2D g, BufferedImage img, Dimensions11D dim) {
+
+        float scaleZ = 1f + (dim.z / 800f);
+        int w = (int)(dim.w * scaleZ);
+        int h = (int)(dim.h * scaleZ);
+
+        g.drawImage(img, (int)dim.x, (int)dim.y, w, h, null);
+    }
+
+
+    /* --------------------------------------------------------
+     * Desenhar botão completo com texto + sombra 3D
+     * --------------------------------------------------------
+    */
+    public void drawButton(Graphics2D g, Dimensions11D dim, String text) {
+
+        // sombra
+        g.setColor(new Color(0, 0, 0, 80));
+        g.fillRoundRect((int)dim.x + 4, (int)dim.y + 4, (int)dim.w, (int)dim.h, 18, 18);
+
+        // botão principal
+        g.setColor(new Color(80, 170, 255));
+        g.fillRoundRect((int)dim.x, (int)dim.y, (int)dim.w, (int)dim.h, 18, 18);
+
+        // texto
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Roboto", Font.BOLD, 18));
+        g.drawString(text, dim.x + 10, dim.y + dim.h/2 + 6);
+    }
+
+
+    /* --------------------------------------------------------
+     * Desenhar círculo 3D / 11D
+     * --------------------------------------------------------
+    */
+    public void drawCircle(Graphics2D g, Dimensions11D dim, Color color) {
+
+        float zScale = 1f + dim.z / 500f;
+
+        g.setColor(color);
+        g.fillOval(
+            (int)dim.x,
+            (int)dim.y,
+            (int)(dim.w * zScale),
+            (int)(dim.h * zScale)
+        );
+    }
+}
+/** pra fazer botão é
+    RenderCore.Dimensions11D d = new RenderCore.Dimensions11D(
+    100, 200, 50,   // x,y,z
+    300, 120,       // width,height
+    0,0,0,0,0,0,0
+);
+
+renderCore.drawButton(g, d, "Iniciar");
+*/
