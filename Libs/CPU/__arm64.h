@@ -1,0 +1,2 @@
+#define CPU_ARCH_ARM64
+#define CPU_ARCH_ARM64_UI
