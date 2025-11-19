@@ -312,3 +312,190 @@ public class View {
         }
     }
 }
+package frameworks.core.base.ui;
+
+import java.util.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+
+// Imports estáticos (igual Android usa muito)
+import static java.lang.Math.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+/**
+ * View.java
+ * Sistema de Interface Único (sem arquivos externos)
+ * Tudo fica aqui:
+ *  - Parser XML modificado
+ *  - Armazenamento de atributos
+ *  - Renderização
+ *  - Widgets básicos
+ */
+public class View {
+
+    // ------------------------------
+    // 1. Estrutura interna da View
+    // ------------------------------
+
+    public String type;
+    public Map<String, String> attrs = new HashMap<>();
+    public List<View> children = new ArrayList<>();
+
+
+    // ------------------------------
+    // 2. Construtor genérico
+    // ------------------------------
+    public View(String type) {
+        this.type = type;
+    }
+
+    public void addChild(View v) {
+        children.add(v);
+    }
+
+
+    // ------------------------------
+    // 3. XML MODIFICADO DO TEU SISTEMA
+    //
+    // Exemplo:
+    // <UI>
+    //   <Label text="Olá mundo" size="22" color="#ffffff" />
+    //   <Button text="OK" width="100" />
+    // </UI>
+    //
+    // ------------------------------
+
+    public static View loadFromModifiedXML(String xmlContent) {
+        XMLParser parser = new XMLParser(xmlContent);
+        return parser.parse();
+    }
+
+
+    // ------------------------------
+    // 4. RENDERIZAÇÃO DA INTERFACE
+    // (pra máquina entender)
+    // ------------------------------
+
+    public void render() {
+        renderView(this, 0);
+    }
+
+    private void renderView(View v, int depth) {
+        String pad = " ".repeat(depth * 2);
+        System.out.println(pad + "[" + v.type + "] " + v.attrs);
+
+        for (View c : v.children) {
+            renderView(c, depth + 1);
+        }
+    }
+
+
+    // --------------------------------
+    // 5. PARSER XML MODIFICADO
+    // --------------------------------
+    static class XMLParser {
+
+        private final String src;
+        private int pos = 0;
+
+        XMLParser(String s) {
+            src = s.replace("\n", "").replace("\r", "").trim();
+        }
+
+        View parse() {
+            skipSpaces();
+            return readTag();
+        }
+
+        private View readTag() {
+            expect('<');
+            String tag = readName();
+
+            View root = new View(tag);
+
+            skipSpaces();
+
+            // Lê atributos
+            while (peek() != '>' && peek() != '/') {
+                String attrName = readName();
+                skipSpaces();
+                expect('=');
+                skipSpaces();
+                String attrValue = readQuoted();
+                root.attrs.put(attrName, attrValue);
+                skipSpaces();
+            }
+
+            // Tag tipo <Button />
+            if (peek() == '/') {
+                expect('/');
+                expect('>');
+                return root;
+            }
+
+            // Fecha cabeçalho >
+            expect('>');
+
+            // Lê filhos
+            while (!look("</" + tag)) {
+                skipSpaces();
+                if (peek() == '<') {
+                    View child = readTag();
+                    root.addChild(child);
+                } else {
+                    break;
+                }
+            }
+
+            // Lê fechamento </tag>
+            expect('<');
+            expect('/');
+            readName();
+            expect('>');
+
+            return root;
+        }
+
+
+        // -----------------------------
+        // Funções auxiliares do parser
+        // -----------------------------
+
+        private char peek() {
+            return src.charAt(pos);
+        }
+
+        private void expect(char c) {
+            if (src.charAt(pos) != c)
+                throw new RuntimeException("Erro de parser: esperado '" + c + "' em pos " + pos);
+            pos++;
+        }
+
+        private boolean look(String s) {
+            return src.startsWith(s, pos);
+        }
+
+        private String readName() {
+            int start = pos;
+            while (Character.isLetterOrDigit(peek()) || peek() == '_' || peek() == '-') {
+                pos++;
+            }
+            return src.substring(start, pos);
+        }
+
+        private String readQuoted() {
+            expect('"');
+            int start = pos;
+            while (peek() != '"') pos++;
+            String v = src.substring(start, pos);
+            expect('"');
+            return v;
+        }
+
+        private void skipSpaces() {
+            while (pos < src.length() && Character.isWhitespace(src.charAt(pos)))
+                pos++;
+        }
+    }
+
+}
