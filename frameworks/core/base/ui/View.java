@@ -773,3 +773,190 @@ para fazer um objeto 11D faz
         updateAnimations(); // <-- animações rodando ao vivo!
         System.out.println("[View] render base posND=" + positionND);
     }
+    // ============================================================
+    // 16. SISTEMA DE SENSORES, AUDIO, CAMERA, NOTIFICAÇÕES E TEMPO
+    // ============================================================
+
+    // Gerente global (único) para acessar hardware
+    public static class SystemManager {
+
+        // ---------- SENSORES GENÉRICOS ----------
+        public static class SensorValue {
+            public double x, y, z;
+            public long timestamp;
+
+            @Override
+            public String toString() {
+                return "x=" + x + ", y=" + y + ", z=" + z + " @ " + timestamp;
+            }
+        }
+
+        public Map<String, SensorValue> sensors = new HashMap<>();
+
+        public SystemManager() {
+            // todos os sensores possíveis
+            sensors.put("accelerometer", new SensorValue());
+            sensors.put("gyroscope", new SensorValue());
+            sensors.put("magnetometer", new SensorValue());
+            sensors.put("gravity", new SensorValue());
+            sensors.put("rotation", new SensorValue());
+            sensors.put("orientation", new SensorValue());
+            sensors.put("light", new SensorValue());
+            sensors.put("proximity", new SensorValue());
+            sensors.put("temperature", new SensorValue());
+            sensors.put("humidity", new SensorValue());
+            sensors.put("pressure", new SensorValue());
+            sensors.put("linear_acceleration", new SensorValue());
+            sensors.put("step_counter", new SensorValue());
+            sensors.put("heart_rate", new SensorValue());
+        }
+
+        // simula mudança de valor
+        public void updateSensor(String type, double x, double y, double z) {
+            if (sensors.containsKey(type)) {
+                SensorValue v = sensors.get(type);
+                v.x = x; v.y = y; v.z = z;
+                v.timestamp = System.currentTimeMillis();
+            }
+        }
+
+        public SensorValue getSensor(String type) {
+            return sensors.get(type);
+        }
+
+
+        // ---------- MICROFONE ----------
+        private boolean micEnabled = false;
+
+        public void enableMicrophone() {
+            micEnabled = true;
+            System.out.println("[System] Microfone ligado");
+        }
+
+        public void disableMicrophone() {
+            micEnabled = false;
+            System.out.println("[System] Microfone desligado");
+        }
+
+        public boolean isMicrophoneOn() {
+            return micEnabled;
+        }
+
+
+        // ---------- CÂMERAS ----------
+        private boolean cameraFront = false;
+        private boolean cameraBack = false;
+
+        public void enableFrontCamera() {
+            cameraFront = true;
+            System.out.println("[System] Câmera frontal ON");
+        }
+
+        public void enableBackCamera() {
+            cameraBack = true;
+            System.out.println("[System] Câmera traseira ON");
+        }
+
+        public void disableCameras() {
+            cameraFront = false;
+            cameraBack = false;
+            System.out.println("[System] Câmeras desligadas");
+        }
+
+        public boolean isFrontCameraOn() { return cameraFront; }
+        public boolean isBackCameraOn()  { return cameraBack;  }
+
+
+        // ---------- ÁUDIO / SPEAKER ----------
+        private int volume = 50; // 0 a 100
+
+        public void setVolume(int v) {
+            volume = Math.max(0, Math.min(100, v));
+            System.out.println("[System] Volume = " + volume);
+        }
+
+        public int getVolume() { return volume; }
+
+
+        // ---------- ALERTAS ----------
+        public void alert(String type, String msg) {
+            System.out.println("[ALERTA - " + type + "] " + msg);
+        }
+
+
+        // ---------- NOTIFICAÇÕES ----------
+        public void notify(String app, String msg) {
+            System.out.println("[NOTIFICAÇÃO][" + app + "] " + msg);
+        }
+
+
+        // ---------- TEMPO / DATA ----------
+        public String getDate() {
+            Calendar c = Calendar.getInstance();
+            int d = c.get(Calendar.DAY_OF_MONTH);
+            int m = c.get(Calendar.MONTH) + 1;
+            int y = c.get(Calendar.YEAR);
+            return d + "/" + m + "/" + y;
+        }
+
+        public String getHour() {
+            Calendar c = Calendar.getInstance();
+            int h = c.get(Calendar.HOUR_OF_DAY);
+            int min = c.get(Calendar.MINUTE);
+            return String.format("%02d:%02d", h, min);
+        }
+
+        public String getTimeZone() {
+            return TimeZone.getDefault().getID();
+        }
+    }
+
+
+    // Único SystemManager do sistema
+    public static final SystemManager system = new SystemManager();
+
+
+
+    // ============================================================
+    // 17. INTEGRAÇÃO COM VIEW — acessar sensores pelo XML
+    // ============================================================
+
+    // Exemplo:
+    // <SensorRead type="accelerometer" />
+    public static class SensorReadView extends View {
+        public String type;
+
+        public SensorReadView() {
+            super("SensorRead");
+        }
+
+        @Override
+        public void render() {
+            SensorValue v = system.getSensor(type);
+            System.out.println("[Sensor " + type + "] " + v);
+        }
+    }
+
+
+    // XML parser adaptado pra sensores
+    public static View createHardwareView(String tag, Map<String,String> attrs) {
+
+        switch (tag) {
+            case "SensorRead":
+                SensorReadView s = new SensorReadView();
+                s.type = attrs.getOrDefault("type", "accelerometer");
+                return s;
+
+            case "Alert":
+                system.alert(attrs.getOrDefault("level","Normal"),
+                             attrs.getOrDefault("text",""));
+                return null;
+
+            case "Notify":
+                system.notify(attrs.getOrDefault("app","App"),
+                              attrs.getOrDefault("text",""));
+                return null;
+        }
+
+        return null;
+    }
