@@ -1,0 +1,185 @@
+# ======================================================================
+#  PearOS / AsmUi - build.prop
+#  Sistema operacional open source baseado no Linux Kernel
+#  Criado por: Enzo Gabryel (AOST / PearCar / AsmUi Project)
+# ======================================================================
+
+ro.os.name=PearOS
+ro.os.version=12.7
+ro.os.codename=ASM-UI-Stable
+ro.os.arch=x86_64|arm64|riscv64
+ro.os.kernel.version=6.9.14-custom-bomjinika
+ro.os.build.id=ASMUI_2025_11_18_RELEASE
+ro.os.device.platform=universal_pear
+ro.os.developer=Enzo_Gabryel
+ro.os.framework.revision=4129
+ro.os.system.type=mobile-car-desktop-hybrid
+
+# ======================================================================
+#  HARDWARE
+# ======================================================================
+hw.board.name=PearBoard-Ultra
+hw.cpu.0=PearChip-A73-Gold-OctaCore
+hw.cpu.1=PearChip-A55-Silver-Quad
+hw.cpu.bigcluster=4
+hw.cpu.littlecluster=4
+hw.gpu=PearVision-G13-tensor
+hw.gpu.vulkan=1.4
+hw.gpu.opengles=3.3
+hw.neural.engine.version=4.2
+hw.camera.front=16MP
+hw.camera.rear=48MP
+hw.camera.ultrawide=8MP
+hw.camera.depth=2MP
+hw.battery.capacity.mAh=5200
+hw.sensors.gyroscope=true
+hw.sensors.accelerometer=true
+hw.sensors.magnetometer=true
+hw.sensors.barometer=true
+hw.sensors.temperature=true
+hw.sensors.hall=true
+hw.sensors.proximity=true
+hw.sensors.light=true
+hw.sensors.gravity=true
+hw.sensors.linear_acc=true
+
+# ======================================================================
+#  DISPLAY
+# ======================================================================
+ro.display.resolution=2400x1080
+ro.display.density=440
+ro.display.refreshrate=120
+ro.display.hdr=true
+ro.display.panel.type=OLED
+ro.display.color.calibration.srgb=true
+ro.display.3d_support=true
+ro.display.11d_projection=true
+ro.display.render.engine=PearRenderX-3.6
+
+# ======================================================================
+#  UI ENGINE (View.java)
+# ======================================================================
+ro.ui.engine=PearUI-Engine-5.0
+ro.ui.animations.fps.max=240
+ro.ui.animations.physics=true
+ro.ui.material.level=4
+ro.ui.shadow.deep=true
+ro.ui.parallax=true
+ro.ui.live.blur=1
+ro.ui.splash.enabled=true
+ro.ui.icon.loading=true
+
+# ======================================================================
+#  AUDIO & MICROPHONE
+# ======================================================================
+ro.audio.speaker=PearSound-CoreMax
+ro.audio.speaker.channels=2
+ro.audio.speaker.maxdb=140
+ro.audio.mic.digitalfilter=true
+ro.audio.mic.noise_cancel=PearNC-V2
+ro.audio.codec=PearAudioPro-7.1
+
+# ======================================================================
+#  NETWORK
+# ======================================================================
+ro.network.wifi=PearWiFi-7Plus
+ro.network.bluetooth=6.2
+ro.network.modem.fusion=true
+ro.network.carplay.alt=PearCarLink
+ro.network.ethernet.support=true
+
+# ======================================================================
+#  POWER MANAGEMENT
+# ======================================================================
+ro.power.deep_sleep=true
+ro.power.super_idle=true
+ro.power.cpu_scaling=dynamic
+ro.power.battery.optimize=aggressive
+ro.power.cooling.ai=true
+
+# ======================================================================
+#  STORAGE
+# ======================================================================
+ro.storage.fs=ext4
+ro.storage.f2fs.support=true
+ro.storage.encryption.enabled=true
+ro.storage.zram=2048MB
+ro.storage.swap.enabled=true
+
+# ======================================================================
+#  NOTIFICATION ENGINE
+# ======================================================================
+ro.notifs.engine=PearNotify-3.1
+ro.notifs.channels.max=128
+ro.notifs.icons.render=vector
+ro.notifs.sound.enabled=true
+ro.notifs.priority.support=true
+
+# ======================================================================
+#  TIME / REGION
+# ======================================================================
+ro.time.timezone.auto=true
+ro.time.months.localization=true
+ro.time.week.start=monday
+
+# ======================================================================
+#  BOOT
+# ======================================================================
+ro.bootanimation.enabled=true
+ro.bootanimation.resolution=1080p
+ro.bootanimation.framerate=60
+ro.bootanimation.engine=PearBootFX
+
+# ======================================================================
+#  SPLASH SCREEN
+# ======================================================================
+ro.splash.logo.render=highquality
+ro.splash.text.font=PearSans-Bold
+ro.splash.duration=2300ms
+ro.splash.anim.fade=true
+ro.splash.anim.scale=true
+
+# ======================================================================
+#  APP ENGINE
+# ======================================================================
+ro.appframework.xml.parser=PearXML-Core
+ro.appframework.dex.compiler=asmui-dex-v3
+ro.appframework.cache.optimization=true
+ro.appframework.safe_mode=false
+
+# ======================================================================
+#  SECURITY
+# ======================================================================
+ro.security.selinux=enforcing
+ro.security.verified_boot=true
+ro.security.encryption=aes256
+ro.security.faceunlock=true
+ro.security.fingerprint=true
+ro.security.kernel.secureboot=true
+
+# ======================================================================
+#  KERNEL EXTRA PARAMS
+# ======================================================================
+kernel.param.scheduler=cfs_v3
+kernel.param.cpu.workqueue=optimized
+kernel.param.gpu.turbo=true
+kernel.param.io.scheduler=bfq
+kernel.param.power.governor=pear_balanced
+kernel.param.thermal.driver=pear_therm_guard
+
+# ======================================================================
+#  DEBUG / DEVELOPMENT
+# ======================================================================
+ro.debuggable=1
+ro.adb.enabled=1
+ro.adb.root=1
+ro.log.level=verbose
+ro.devtools.inspector=true
+ro.devtools.hot_reload=true
+
+# ======================================================================
+#  FINAL
+# ======================================================================
+ro.system.signature=ASMUI_PEAROS_CORE_2025
+ro.system.maintainer=ENZO_GABRYEL
+ro.system.status=production-ready
