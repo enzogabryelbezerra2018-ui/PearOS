@@ -499,3 +499,126 @@ public class View {
     }
 
 }
+    // ============================================================
+    // 6. SISTEMA DE COORDENADAS MULTIDIMENSIONAIS (2D → 11D)
+    // ============================================================
+
+    public static class NDPoint {
+        public final double[] coords;
+
+        public NDPoint(int dimensions) {
+            this.coords = new double[dimensions];
+        }
+
+        public void set(int dimensionIndex, double value) {
+            if (dimensionIndex < 0 || dimensionIndex >= coords.length)
+                throw new RuntimeException("Dimensão inválida: " + dimensionIndex);
+            coords[dimensionIndex] = value;
+        }
+
+        public double get(int dimensionIndex) {
+            return coords[dimensionIndex];
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(coords);
+        }
+    }
+
+
+    // ============================================================
+    // 7. VIEW base com suporte a posição ND (até 11D)
+    // ============================================================
+
+    public NDPoint positionND = new NDPoint(11);  // 2D padrão + 9D adicionais
+
+    public void setPositionND(int dimension, double value) {
+        positionND.set(dimension, value);
+    }
+
+
+    // ============================================================
+    // 8. View especializada: TextPixels (texto puro em pixels)
+    // ============================================================
+
+    public static class TextPixelsView extends View {
+        public String text;
+        public int pixelSize;
+
+        public TextPixelsView() {
+            super("TextPixels");
+        }
+
+        @Override
+        public void render() {
+            System.out.println("[TextPixels] \"" + text + "\" size=" + pixelSize +
+                " pos=" + positionND);
+        }
+    }
+
+
+    // ============================================================
+    // 9. Views 3D, 4D, …, 11D (matemática completa)
+    // ============================================================
+
+    public static class ObjectNDView extends View {
+        public int dims;
+
+        public ObjectNDView(int dims) {
+            super("Object" + dims + "D");
+            this.dims = dims;
+        }
+
+        @Override
+        public void render() {
+            System.out.println("[Object" + dims + "D] pos=" + positionND);
+        }
+    }
+
+
+    // ============================================================
+    // 10. Suporte no XML parser para TextPixels e ObjectND
+    // ============================================================
+
+    @Override
+    public void addChild(View v) {
+        children.add(v);
+    }
+
+    public static View createSpecialViewFromTag(String tag, Map<String,String> attrs) {
+        switch (tag) {
+
+            case "TextPixels": {
+                TextPixelsView t = new TextPixelsView();
+                t.text = attrs.getOrDefault("text", "");
+                t.pixelSize = Integer.parseInt(attrs.getOrDefault("size", "10"));
+                applyNDPosition(attrs, t);
+                return t;
+            }
+
+            case "Object11D": {
+                ObjectNDView o = new ObjectNDView(11);
+                applyNDPosition(attrs, o);
+                return o;
+            }
+
+            case "Object3D": {
+                ObjectNDView o = new ObjectNDView(3);
+                applyNDPosition(attrs, o);
+                return o;
+            }
+        }
+
+        return new View(tag);
+    }
+
+    private static void applyNDPosition(Map<String,String> attrs, View view) {
+        for (int i = 0; i < 11; i++) {
+            String key = "x" + (i + 1);
+            if (attrs.containsKey(key)) {
+                double v = Double.parseDouble(attrs.get(key));
+                view.setPositionND(i, v);
+            }
+        }
+    }
